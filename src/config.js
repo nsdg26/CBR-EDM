@@ -5,7 +5,7 @@ export const config = {
   // Site name and domain decided by the owner, see SPEC.md section 18.
   siteName: 'CBR EDM',
 
-  slogan: 'No algorithm - The info you need, for those with no feed',
+  slogan: 'No social media? - The info you need, for those with no feed',
 
   // Board column labels, section 7.1. Defaults from the spec, "Been and
   // gone" renamed to "Past events" per owner request.
