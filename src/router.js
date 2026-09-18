@@ -6,7 +6,7 @@ import { handleCalendarFeed } from './routes/calendarFeed.js';
 import { handleGo } from './routes/go.js';
 import { handleRobots } from './routes/robots.js';
 import { adminRouter } from './routes/admin/router.js';
-import { handleSubmitForm, handleSubmitConfirmation, handleSubmissionApi } from './routes/submit.js';
+import { handleSubmitForm, handleSubmitConfirmation, handleSubmissionApi, handleVenueCheck } from './routes/submit.js';
 import { handleEditPage, handleEditLoad, handleEditUpdate, handleEditCancel, handleEditRemoval } from './routes/edit.js';
 import {
   handleCrewPage, handleCrewLogin, handleCrewEventList, handleCrewEventCreate,
@@ -42,6 +42,7 @@ export async function router(request, env) {
   if (path === '/submit' && method === 'GET') return handleSubmitForm(request, env);
   if (path === '/submit/confirmation' && method === 'GET') return handleSubmitConfirmation(request, env);
   if (path === '/api/submissions' && method === 'POST') return handleSubmissionApi(request, env);
+  if (path === '/api/venue-check' && method === 'POST') return handleVenueCheck(request, env);
 
   if (path === '/edit' && method === 'GET') return handleEditPage(request, env);
   if (path === '/api/edit/load' && method === 'POST') return handleEditLoad(request, env);

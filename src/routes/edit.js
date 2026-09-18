@@ -5,7 +5,7 @@ import { readEventFields, validateEventFields } from '../lib/eventFields.js';
 import { generateId } from '../lib/ids.js';
 import { utcToCanberraLocalInput } from '../lib/dates.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
-import { terrainFieldsFor } from '../lib/geocode.js';
+import { terrainFieldsFor, checkVenueRealness } from '../lib/geocode.js';
 
 const NO_JS_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
@@ -88,10 +88,15 @@ export async function handleEditUpdate(request, env) {
   const errors = validateEventFields(fields);
   if (errors.length) return jsonResponse({ ok: false, error: errors[0] }, 400);
 
+  const venueCheck = await checkVenueRealness(fields);
+  if (!venueCheck.skip && !venueCheck.ok) {
+    return jsonResponse({ ok: false, error: "We couldn't find that venue address. Check it, or tick Location TBA if it's not locked in yet." }, 400);
+  }
+
   const now = new Date().toISOString();
 
   if (event.visibility === 'pending') {
-    const terrain = await terrainFieldsFor(fields, event);
+    const terrain = await terrainFieldsFor(fields, event, venueCheck.skip ? undefined : venueCheck.location);
     await env.DB.prepare(
       `UPDATE events SET title = ?, presented_by = ?, start_at = ?, end_at = ?, venue_name = ?, venue_address = ?,
          location_tba = ?, location_reveal_at = ?, location_how_to_find = ?, genres = ?,

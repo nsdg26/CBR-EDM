@@ -1,6 +1,8 @@
 // Shared display logic for event cards and event pages. See SPEC.md
 // section 8.2 for the status stamp rules.
 
+import { parseLineupText } from './lineup.js';
+
 const STATUS_STAMPS = {
   cancelled: 'CANCELLED',
   sold_out: 'SOLD OUT',
@@ -40,13 +42,12 @@ export function venueTextFor(event) {
 }
 
 /**
- * The lineup, truncated to the first few acts for a card. Section 8.1.
- * @param {string|null} lineup - one act per line
+ * The lineup names, truncated to the first few acts for a card. Section 8.1.
+ * @param {string|null} lineup
  * @param {number} [maxActs]
  */
 export function lineupPreview(lineup, maxActs = 3) {
-  if (!lineup) return { acts: [], hasMore: false };
-  const acts = lineup.split('\n').map((line) => line.trim()).filter(Boolean);
+  const acts = parseLineupText(lineup).map((act) => act.name);
   return {
     acts: acts.slice(0, maxActs),
     hasMore: acts.length > maxActs,

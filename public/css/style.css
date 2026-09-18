@@ -696,6 +696,62 @@ details.field summary {
   color: var(--paper);
 }
 
+/* A checkbox and its label text were never actually aligned: the shared
+   input/textarea/select rule above gives every <input> a 44px min-height
+   (a comfortable tap target for a text field), which a checkbox also
+   picked up, blowing it up to 44px square next to normal-height text.
+   :has() covers every existing "<label><input type=checkbox> Text</label>"
+   pair (admin forms included) without needing a class on each one; the
+   .field-checkbox class is for a wrapping <div> that wants the same
+   layout without relying on :has() support. */
+.field label:has(> input[type="checkbox"]),
+.field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field label:has(> input[type="checkbox"]) input[type="checkbox"],
+.field-checkbox input[type="checkbox"] {
+  min-height: auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+}
+
+/* DJ rows, section 9.1 rework: name + optional inline genre/set-time note
+   + headliner checkbox + a remove button, one row per act. */
+.lineup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.lineup-row input[type="text"] {
+  flex: 1 1 10rem;
+}
+
+.lineup-row-headliner {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.lineup-row-headliner input[type="checkbox"] {
+  min-height: auto;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.lineup-row [data-remove-dj] {
+  padding: 0.4rem 0.7rem;
+  min-height: auto;
+}
+
 /* Reduced motion and high contrast, sections 13.5 and 14 */
 @media (prefers-reduced-motion: reduce) {
   * {

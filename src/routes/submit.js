@@ -6,12 +6,16 @@ import { generateToken, hashToken } from '../lib/tokens.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { sendAdminAlert } from '../lib/email.js';
-import { terrainFieldsFor } from '../lib/geocode.js';
+import { terrainFieldsFor, checkVenueRealness } from '../lib/geocode.js';
 
 const TURNSTILE_SCRIPT = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>';
 
 export async function handleSubmitForm(request, env) {
-  const body = submitFormPage(env.TURNSTILE_SITE_KEY);
+  const { results: crews } = await env.DB.prepare(
+    'SELECT name FROM crews WHERE listed = 1 ORDER BY name',
+  ).all();
+
+  const body = submitFormPage(env.TURNSTILE_SITE_KEY, crews.map((crew) => crew.name));
   const page = String(layout({ title: 'Submit an event', bodyContent: body, extraHead: TURNSTILE_SCRIPT }));
   return new Response(page, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
 }
@@ -50,6 +54,11 @@ export async function handleSubmissionApi(request, env) {
   const errors = validateEventFields(fields);
   if (errors.length) return jsonResponse({ ok: false, error: errors[0] }, 400);
 
+  const venueCheck = await checkVenueRealness(fields);
+  if (!venueCheck.skip && !venueCheck.ok) {
+    return jsonResponse({ ok: false, error: "We couldn't find that venue address. Check it, or tick Location TBA if it's not locked in yet." }, 400);
+  }
+
   const submitterContact = (formData.get('submitter_contact') || '').slice(0, 300) || null;
   const crewKey = formData.get('crew_key');
 
@@ -69,7 +78,7 @@ export async function handleSubmissionApi(request, env) {
   const source = crew ? 'crew' : 'public';
   const willPublish = crew?.trusted && fields.title && fields.start_at;
   const visibility = willPublish ? 'published' : 'pending';
-  const terrain = await terrainFieldsFor(fields);
+  const terrain = await terrainFieldsFor(fields, {}, venueCheck.skip ? undefined : venueCheck.location);
 
   let editToken = null;
   let editTokenHash = null;
@@ -106,4 +115,26 @@ export async function handleSubmissionApi(request, env) {
   });
 
   return jsonResponse({ ok: true, editToken: editToken || undefined });
+}
+
+/**
+ * POST /api/venue-check. Lets step 2 confirm the address resolves to a
+ * real place before the visitor moves on, using the same geocoder as the
+ * final submit-time check in handleSubmissionApi -- this is a convenience
+ * for earlier feedback, not a replacement for that server-side check.
+ */
+export async function handleVenueCheck(request, env) {
+  const allowed = await checkRateLimit(request, env, 'venue_check', 40);
+  if (!allowed) return jsonResponse({ ok: false, error: 'Too many checks. Wait a moment and try again.' }, 429);
+
+  const body = await request.json().catch(() => ({}));
+  const fields = {
+    location_tba: body.location_tba ? 1 : 0,
+    venue_name: (body.venue_name || '').slice(0, 200) || null,
+    venue_address: (body.venue_address || '').slice(0, 300) || null,
+  };
+
+  const result = await checkVenueRealness(fields);
+  if (result.skip) return jsonResponse({ ok: true, skipped: true });
+  return jsonResponse({ ok: result.ok });
 }

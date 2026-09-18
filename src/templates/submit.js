@@ -14,17 +14,35 @@ function renderField([name, label, type]) {
 const STEP_COUNT = 4;
 
 /**
+ * One DJ row's static template, cloned client-side by public/js/submit-form.js
+ * (section 9.1 rework: individual DJ rows replace the single lineup
+ * textarea). The name/note/headliner values are serialised into the
+ * hidden `lineup` field just before submit -- see serializeLineupLine in
+ * src/lib/lineup.js, which this markup's fields mirror.
+ */
+function lineupRowTemplate() {
+  return html`<template data-lineup-row-template>
+    <div class="lineup-row" data-lineup-row>
+      <input type="text" data-lineup-name placeholder="DJ name" aria-label="DJ name">
+      <input type="text" data-lineup-note placeholder="Genre / set time (optional)" aria-label="Genre or set time, optional">
+      <label class="lineup-row-headliner"><input type="checkbox" data-lineup-headliner> Headliner</label>
+      <button type="button" class="secondary" data-remove-dj aria-label="Remove this DJ">&times;</button>
+    </div>
+  </template>`;
+}
+
+/**
  * GET /submit. Section 9.1: no field is required. The private contact
  * field sits visually apart from the public fields. Presented as a
  * step-by-step wizard rather than one long scrolling form; every field
  * still posts in a single request exactly as before, JavaScript just
  * shows one step at a time.
  * @param {string} turnstileSiteKey
+ * @param {string[]} [crewNames] - for the "presented by" suggestions, section 9.1 rework
  */
-export function submitFormPage(turnstileSiteKey) {
+export function submitFormPage(turnstileSiteKey, crewNames = []) {
   return html`
     <h1>Submit an event</h1>
-    <p>Share as much or as little as you like. Nothing here is required.</p>
 
     <form data-submit-form data-turnstile-sitekey="${turnstileSiteKey}" action="/api/submissions" method="post">
       <p class="step-progress" aria-live="polite">Step <span data-step-current>1</span> of ${STEP_COUNT}</p>
@@ -32,7 +50,14 @@ export function submitFormPage(turnstileSiteKey) {
       <div class="form-wizard">
         <fieldset class="form-step is-active" data-step="1">
           <h2>The basics</h2>
-          ${[['title', 'Title', 'text'], ['presented_by', 'Presented by', 'text']].map(renderField)}
+          ${renderField(['title', 'Title', 'text'])}
+          <div class="field">
+            <label for="presented_by">Presented by</label>
+            <input type="text" id="presented_by" name="presented_by" list="presented-by-crews" autocomplete="off">
+            <datalist id="presented-by-crews">
+              ${crewNames.map((name) => html`<option value="${name}">`)}
+            </datalist>
+          </div>
           <div class="actions">
             <button type="button" data-next>Next</button>
           </div>
@@ -46,7 +71,7 @@ export function submitFormPage(turnstileSiteKey) {
             ['venue_name', 'Venue name', 'text'],
             ['venue_address', 'Venue address', 'text'],
           ].map(renderField)}
-          <div class="field">
+          <div class="field field-checkbox">
             <label><input type="checkbox" name="location_tba" value="1" data-tba-toggle> Location TBA</label>
           </div>
           <div class="field" data-tba-fields hidden>
@@ -55,6 +80,7 @@ export function submitFormPage(turnstileSiteKey) {
             <label for="location_how_to_find">How will people find out?</label>
             <input type="text" id="location_how_to_find" name="location_how_to_find">
           </div>
+          <p data-venue-check-status role="status" class="muted"></p>
           <div class="actions">
             <button type="button" class="secondary" data-back>Back</button>
             <button type="button" data-next>Next</button>
@@ -63,15 +89,22 @@ export function submitFormPage(turnstileSiteKey) {
 
         <fieldset class="form-step" data-step="3">
           <h2>The details</h2>
+          ${renderField(['genres', 'Genre', 'text'])}
+
+          <div class="field">
+            <label>Lineup</label>
+            <div data-lineup-rows></div>
+            ${lineupRowTemplate()}
+            <input type="hidden" name="lineup" data-lineup-value>
+            <div class="actions">
+              <button type="button" class="secondary" data-add-dj>+ Add DJ</button>
+            </div>
+          </div>
+
           ${[
-            ['genres', 'Genre', 'text'],
-            ['lineup', 'Lineup (one act per line)', 'textarea'],
             ['ticket_url', 'Ticket URL', 'url'],
             ['notes', 'Anything else worth knowing', 'textarea'],
           ].map(renderField)}
-          <div class="field">
-            <label><input type="checkbox" name="lineup_equal_billing" value="1"> Equal billing (no headliner -- list every act on the flyer at the same size)</label>
-          </div>
           <div class="field">
             <label for="age_restriction">Age restriction</label>
             <select id="age_restriction" name="age_restriction">

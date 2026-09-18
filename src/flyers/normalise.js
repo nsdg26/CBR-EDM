@@ -4,6 +4,7 @@
 
 import { toCanberraParts } from '../lib/dates.js';
 import { isEventPast } from '../lib/dates.js';
+import { actsWithHeadliners } from '../lib/lineup.js';
 
 const WEEKDAYS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const MONTHS_FULL = [
@@ -15,21 +16,6 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 function pad(n) {
   return String(n).padStart(2, '0');
-}
-
-/**
- * Section 5: "Derived from billing order if the crew did not set it: first
- * act is tier 1, next two are tier 2, remainder tier 3."
- * @param {string|null} lineup - one act per line
- */
-function actsFor(lineup) {
-  if (!lineup) return [];
-  const names = lineup.split('\n').map((line) => line.trim()).filter(Boolean);
-  return names.map((name, i) => ({
-    name,
-    tier: i === 0 ? 1 : i <= 2 ? 2 : 3,
-    note: null, // no per-act annotation field exists yet in the events table
-  }));
 }
 
 /**
@@ -82,12 +68,14 @@ function statusFor(event, now) {
  */
 export function normaliseEvent(event, options = {}) {
   const now = options.now || new Date();
-  const acts = actsFor(event.lineup);
-  const headliner = acts[0]?.name || event.title || null;
-  // Owner request: small community events often put equal emphasis on
-  // every act rather than one headliner -- an explicit admin/crew choice
-  // (the "Equal billing" checkbox), not inferred from the lineup itself.
-  const equalBilling = Boolean(event.lineup_equal_billing);
+  // Section 9.1 rework: headliner is now an explicit per-act flag (the DJ
+  // row's "headliner" checkbox), not inferred from position. A legacy
+  // plain lineup keeps the old first-act-is-headliner convention (see
+  // lib/lineup.js), so any previously published flyer looks the same as
+  // it always did.
+  const acts = actsWithHeadliners(event.lineup, event.lineup_equal_billing);
+  const headlinerActs = acts.filter((act) => act.headliner);
+  const headliner = headlinerActs[0]?.name || acts[0]?.name || event.title || null;
 
   let dateLong = null;
   let dateShort = null;
@@ -113,7 +101,6 @@ export function normaliseEvent(event, options = {}) {
     id: event.id,
     seedSalt: event.seed_salt || 0,
     headliner,
-    equalBilling,
     title: event.title || null,
     presenter: event.crew_name || event.presented_by || null,
     acts,

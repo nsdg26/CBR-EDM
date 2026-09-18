@@ -1,5 +1,7 @@
 // iCalendar (RFC 5545) generation. See SPEC.md section 11.1.
 
+import { parseLineupText } from './lineup.js';
+
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const LINE_LENGTH = 75;
 
@@ -52,9 +54,11 @@ export function eventToVEvent(event, domain, now = new Date()) {
     ? 'Location TBA, see event page'
     : [event.venue_name, event.venue_address].filter(Boolean).join(', ');
 
+  const lineupNames = parseLineupText(event.lineup).map((act) => act.name).join(', ');
+
   const descriptionParts = [
     event.crew_name || event.presented_by,
-    event.lineup,
+    lineupNames || null,
     `https://${domain}/e/${event.slug}`,
   ].filter(Boolean);
 
