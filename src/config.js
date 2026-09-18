@@ -3,7 +3,7 @@
 
 export const config = {
   // Site name and domain decided by the owner, see SPEC.md section 18.
-  siteName: 'CBR EDM',
+  siteName: 'CBR DANCE MUSIC',
 
   slogan: 'No social media? - The info you need, for those with no feed',
 
