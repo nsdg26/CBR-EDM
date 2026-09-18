@@ -121,7 +121,7 @@ export function posterPage(homeUrl, size) {
     <h1>${config.siteName}</h1>
     <p>${config.slogan}</p>
     ${raw(qrSvg)}
-    <p>${homeUrl.replace(/^https?:\/\//, '')}</p>
+    <p>${homeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</p>
   </div>
   <script src="/js/poster-print.js" defer></script>
 </body>

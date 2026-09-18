@@ -93,7 +93,7 @@ export async function handleSubmissionApi(request, env) {
        age_restriction, status, visibility, source, submitter_contact,
        edit_token_hash, sequence, created_at, updated_at, published_at,
        venue_lat, venue_lng, elevation_grid)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'on', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'on', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
     id, slug, fields.title, crew?.id || null, fields.presented_by, fields.start_at, fields.end_at,
     fields.venue_name, fields.venue_address, fields.location_tba, fields.location_reveal_at,

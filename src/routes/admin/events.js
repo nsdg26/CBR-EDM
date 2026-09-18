@@ -89,7 +89,7 @@ export async function handleEventCreate(request, env, admin) {
        location_tba, location_reveal_at, location_how_to_find, genres, lineup, lineup_equal_billing, ticket_url, notes,
        age_restriction, status, visibility, source, sequence, created_at, updated_at,
        venue_lat, venue_lng, elevation_grid)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'admin', 0, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'admin', 0, ?, ?, ?, ?, ?)`,
   ).bind(
     id, slug, fields.title, fields.crew_id, fields.presented_by, fields.start_at, fields.end_at,
     fields.venue_name, fields.venue_address, fields.location_tba, fields.location_reveal_at,
