@@ -18,6 +18,15 @@ const SIZES = {
 export function posterPage(homeUrl, size) {
   const dimensions = SIZES[size] || SIZES.a4;
   const otherSize = size === 'a6' ? 'a4' : 'a6';
+  // A6 is the hand-tuned baseline (owner feedback: its margins and fill
+  // are right). Content scaled off a plain size ternary (as this used to)
+  // grows slower than the page itself -- A4 is exactly 2x A6 linearly, but
+  // a hardcoded "a4 is a bit bigger" font size was only ~1.5-1.8x, so A4
+  // read as mostly blank page around small text. Scaling every content
+  // dimension by the same real-world size ratio keeps A4 filled the same
+  // proportion of the page as A6, at any size added to SIZES later too.
+  const scale = dimensions.widthMm / SIZES.a6.widthMm;
+  const mm = (value) => `${value * scale}mm`;
 
   const qr = qrcode(0, 'M');
   qr.addData(homeUrl);
@@ -80,28 +89,28 @@ export function posterPage(homeUrl, size) {
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 8mm;
+      gap: ${mm(8)};
     }
 
     .sheet h1 {
       font-family: 'Big Shoulders Display', sans-serif;
       font-weight: 900;
       text-transform: uppercase;
-      font-size: ${size === 'a6' ? '9mm' : '16mm'};
+      font-size: ${mm(9)};
       line-height: 1.05;
       margin: 0;
     }
 
     .sheet p {
-      font-size: ${size === 'a6' ? '4mm' : '6mm'};
+      font-size: ${mm(4)};
       line-height: 1.3;
       margin: 0;
       max-width: 42ch;
     }
 
     .sheet svg {
-      width: ${size === 'a6' ? '45mm' : '70mm'};
-      height: ${size === 'a6' ? '45mm' : '70mm'};
+      width: ${mm(45)};
+      height: ${mm(45)};
     }
 
     @media print {
