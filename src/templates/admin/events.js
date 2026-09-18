@@ -1,5 +1,6 @@
 import { html, raw } from '../../lib/escape.js';
 import { render as renderFlyer } from '../../flyers/index.js';
+import { lineupField, renderLineupRows, ageRestrictionField } from '../lineupRow.js';
 
 /**
  * GET /admin/events. List with search by title, section 10.2.
@@ -32,7 +33,7 @@ export function eventListPage(events, query) {
   `;
 }
 
-const FIELD_DEFS = [
+const FIELD_DEFS_BEFORE_LINEUP = [
   ['title', 'Title', 'text'],
   ['presented_by', 'Presented by (free text, leave blank if using the crew field below)', 'text'],
   ['start_at_local', 'Start (Canberra time)', 'datetime-local'],
@@ -41,11 +42,23 @@ const FIELD_DEFS = [
   ['venue_address', 'Venue address', 'text'],
   ['location_reveal_at', 'Location reveal date (if TBA)', 'text'],
   ['location_how_to_find', 'How people will find out (if TBA)', 'text'],
-  ['genres', 'Genre', 'text'],
-  ['lineup', 'Lineup (one act per line)', 'textarea'],
+];
+
+const FIELD_DEFS_AFTER_LINEUP = [
   ['ticket_url', 'Ticket URL', 'url'],
   ['notes', 'Notes (event page only)', 'textarea'],
 ];
+
+function renderField([name, label, type], event) {
+  return html`<div class="field">
+    <label for="${name}">${label}</label>
+    ${type === 'textarea'
+      ? html`<textarea id="${name}" name="${name}">${event[name] || ''}</textarea>`
+      : type === 'url'
+        ? html`<input type="text" inputmode="url" id="${name}" name="${name}" value="${event[name] || ''}">`
+        : html`<input type="${type}" id="${name}" name="${name}" value="${event[name] || ''}">`}
+  </div>`;
+}
 
 /**
  * GET/POST /admin/events/new and /admin/events/:id/edit. Section 10.2.
@@ -66,18 +79,15 @@ export function eventFormPage(event, crews, options = {}) {
       ? html`<ul class="field-error">${options.errors.map((error) => html`<li>${error}</li>`)}</ul>`
       : ''}
     <form method="post" action="${action}">
-      ${FIELD_DEFS.map(([name, label, type]) => html`<div class="field">
-        <label for="${name}">${label}</label>
-        ${type === 'textarea'
-          ? html`<textarea id="${name}" name="${name}">${event[name] || ''}</textarea>`
-          : type === 'url'
-            ? html`<input type="text" inputmode="url" id="${name}" name="${name}" value="${event[name] || ''}">`
-            : html`<input type="${type}" id="${name}" name="${name}" value="${event[name] || ''}">`}
-      </div>`)}
+      ${FIELD_DEFS_BEFORE_LINEUP.map((def) => renderField(def, event))}
+
+      ${lineupField({ initialRowsHtml: renderLineupRows(event.lineup), genres: event.genres })}
 
       <div class="field">
         <label><input type="checkbox" name="lineup_equal_billing" value="1" ${event.lineup_equal_billing ? raw('checked') : ''}> Equal billing (no headliner -- list every act on the flyer at the same size)</label>
       </div>
+
+      ${FIELD_DEFS_AFTER_LINEUP.map((def) => renderField(def, event))}
 
       <div class="field">
         <label for="crew_id">Crew</label>
@@ -91,12 +101,7 @@ export function eventFormPage(event, crews, options = {}) {
         <label><input type="checkbox" name="location_tba" value="1" ${event.location_tba ? raw('checked') : ''}> Location TBA</label>
       </div>
 
-      <div class="field">
-        <label for="age_restriction">Age restriction</label>
-        <select id="age_restriction" name="age_restriction">
-          ${['unknown', '18+', 'all_ages'].map((value) => html`<option value="${value}" ${event.age_restriction === value ? raw('selected') : ''}>${value}</option>`)}
-        </select>
-      </div>
+      ${ageRestrictionField(event.age_restriction !== 'all_ages')}
 
       <div class="field">
         <label for="status">Status</label>

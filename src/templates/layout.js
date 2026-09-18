@@ -47,6 +47,7 @@ export function layout({ title, bodyContent, extraHead = '', bodyClass = '' }) {
   <!-- build:CF_VERSION_ID -->
   <script src="/js/header-height.js" defer></script>
   <script src="/js/board-toggle.js" defer></script>
+  <script src="/js/lineup-rows.js" defer></script>
   <script src="/js/submit-form.js" defer></script>
   <script src="/js/edit-form.js" defer></script>
   <script src="/js/crew-dashboard.js" defer></script>

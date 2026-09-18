@@ -70,3 +70,38 @@ export function serializeLineupLine(act) {
   if (act.headliner) line += ' | headliner';
   return line;
 }
+
+// Section 9.1 rework: the DJ-row form splits "note" into two visible boxes,
+// Genre and Set time, joined back into one note string with this separator
+// so storage (and anything that displays a note verbatim, e.g. the event
+// page) stays exactly what it always was -- free text, one note per act.
+// A note that predates this split (typed by hand, or written before this
+// feature existed) simply has no NOTE_PART_SEPARATOR in it, so splitNote
+// puts all of it in "genre" and leaves "time" empty rather than guessing or
+// dropping anything -- re-serializing an untouched row reproduces the exact
+// same note.
+const NOTE_PART_SEPARATOR = ' · ';
+
+/**
+ * @param {string|null} note
+ * @returns {{ genre: string, time: string }}
+ */
+export function splitNote(note) {
+  const trimmed = (note || '').trim();
+  if (!trimmed) return { genre: '', time: '' };
+  const idx = trimmed.indexOf(NOTE_PART_SEPARATOR);
+  if (idx === -1) return { genre: trimmed, time: '' };
+  return { genre: trimmed.slice(0, idx).trim(), time: trimmed.slice(idx + NOTE_PART_SEPARATOR.length).trim() };
+}
+
+/**
+ * @param {string} [genre]
+ * @param {string} [time]
+ * @returns {string}
+ */
+export function joinNote(genre, time) {
+  const g = (genre || '').trim();
+  const t = (time || '').trim();
+  if (g && t) return `${g}${NOTE_PART_SEPARATOR}${t}`;
+  return g || t;
+}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseLineupText, actsWithHeadliners, serializeLineupLine } from '../src/lib/lineup.js';
+import { parseLineupText, actsWithHeadliners, serializeLineupLine, splitNote, joinNote } from '../src/lib/lineup.js';
 
 test('parseLineupText treats a bare lineup as legacy, no headliner flagged', () => {
   const acts = parseLineupText('Deep Signal\nSupport Act');
@@ -57,4 +57,20 @@ test('serializeLineupLine with no note or headliner still marks new format (a tr
   const line = serializeLineupLine({ name: 'Deep Signal' });
   assert.ok(line.includes('|'));
   assert.deepEqual(parseLineupText(line)[0], { name: 'Deep Signal', note: null, headliner: false });
+});
+
+test('joinNote and splitNote round-trip genre and set time', () => {
+  const note = joinNote('Techno', '9pm-10pm');
+  assert.deepEqual(splitNote(note), { genre: 'Techno', time: '9pm-10pm' });
+});
+
+test('joinNote with only a genre or only a time omits the separator', () => {
+  assert.equal(joinNote('Techno', ''), 'Techno');
+  assert.equal(joinNote('', '9pm'), '9pm');
+  assert.equal(joinNote('', ''), '');
+});
+
+test('splitNote puts a legacy freeform note (no separator) entirely in genre, never dropping it', () => {
+  assert.deepEqual(splitNote('back to back with Support Act'), { genre: 'back to back with Support Act', time: '' });
+  assert.deepEqual(splitNote(null), { genre: '', time: '' });
 });

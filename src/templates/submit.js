@@ -1,4 +1,5 @@
 import { html } from '../lib/escape.js';
+import { lineupField, ageRestrictionField } from './lineupRow.js';
 
 function renderField([name, label, type]) {
   return html`<div class="field">
@@ -12,24 +13,6 @@ function renderField([name, label, type]) {
 }
 
 const STEP_COUNT = 4;
-
-/**
- * One DJ row's static template, cloned client-side by public/js/submit-form.js
- * (section 9.1 rework: individual DJ rows replace the single lineup
- * textarea). The name/note/headliner values are serialised into the
- * hidden `lineup` field just before submit -- see serializeLineupLine in
- * src/lib/lineup.js, which this markup's fields mirror.
- */
-function lineupRowTemplate() {
-  return html`<template data-lineup-row-template>
-    <div class="lineup-row" data-lineup-row>
-      <input type="text" data-lineup-name placeholder="DJ name" aria-label="DJ name">
-      <input type="text" data-lineup-note placeholder="Genre / set time (optional)" aria-label="Genre or set time, optional">
-      <label class="lineup-row-headliner"><input type="checkbox" data-lineup-headliner> Headliner</label>
-      <button type="button" class="secondary" data-remove-dj aria-label="Remove this DJ">&times;</button>
-    </div>
-  </template>`;
-}
 
 /**
  * GET /submit. Section 9.1: no field is required. The private contact
@@ -89,30 +72,13 @@ export function submitFormPage(turnstileSiteKey, crewNames = []) {
 
         <fieldset class="form-step" data-step="3">
           <h2>The details</h2>
-          ${renderField(['genres', 'Genre', 'text'])}
-
-          <div class="field">
-            <label>Lineup</label>
-            <div data-lineup-rows></div>
-            ${lineupRowTemplate()}
-            <input type="hidden" name="lineup" data-lineup-value>
-            <div class="actions">
-              <button type="button" class="secondary" data-add-dj>+ Add DJ</button>
-            </div>
-          </div>
+          ${lineupField()}
 
           ${[
             ['ticket_url', 'Ticket URL', 'url'],
             ['notes', 'Anything else worth knowing', 'textarea'],
           ].map(renderField)}
-          <div class="field">
-            <label for="age_restriction">Age restriction</label>
-            <select id="age_restriction" name="age_restriction">
-              <option value="unknown" selected>Not sure / not set</option>
-              <option value="18+">18+</option>
-              <option value="all_ages">All ages</option>
-            </select>
-          </div>
+          ${ageRestrictionField()}
           <div class="actions">
             <button type="button" class="secondary" data-back>Back</button>
             <button type="button" data-next>Next</button>

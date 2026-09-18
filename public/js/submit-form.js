@@ -23,62 +23,20 @@
       }
     }
 
-    // Section 9.1 rework: individual DJ rows (name, an optional inline
-    // genre/set-time note, and a headliner checkbox) replace the old
-    // single "one act per line" textarea and the separate equal-billing
-    // checkbox. Serialised into the hidden `lineup` field as one line per
-    // row, "name | note | headliner" -- see src/lib/lineup.js, which parses
-    // exactly this format server-side, and keeps the wire format a plain
-    // text column so nothing else about how the field posts has to change.
+    // Section 9.1 rework: individual DJ rows (name, set time, genre and a
+    // headliner checkbox) replace the old single "one act per line"
+    // textarea, the separate equal-billing checkbox and the standalone
+    // event-wide Genre field -- see public/js/lineup-rows.js, shared with
+    // the admin and public edit-your-listing forms so all three behave
+    // identically.
     var lineupRowsContainer = form.querySelector('[data-lineup-rows]');
-    var lineupRowTemplate = form.querySelector('[data-lineup-row-template]');
-    var lineupValueInput = form.querySelector('[data-lineup-value]');
-    var addDjButton = form.querySelector('[data-add-dj]');
-
-    function addLineupRow() {
-      if (!lineupRowTemplate || !lineupRowsContainer) return;
-      var row = lineupRowTemplate.content.firstElementChild.cloneNode(true);
-      var removeButton = row.querySelector('[data-remove-dj]');
-      if (removeButton) {
-        removeButton.addEventListener('click', function () {
-          row.remove();
-          serializeLineup();
-        });
-      }
-      lineupRowsContainer.appendChild(row);
-      return row;
-    }
-
-    function serializeLineup() {
-      if (!lineupRowsContainer || !lineupValueInput) return;
-      var rows = Array.prototype.slice.call(lineupRowsContainer.querySelectorAll('[data-lineup-row]'));
-      var lines = rows.map(function (row) {
-        var name = row.querySelector('[data-lineup-name]').value.trim();
-        if (!name) return null;
-        var note = row.querySelector('[data-lineup-note]').value.trim();
-        var headliner = row.querySelector('[data-lineup-headliner]').checked;
-        var line = name + ' | ' + note;
-        if (headliner) line += ' | headliner';
-        return line;
-      }).filter(Boolean);
-      lineupValueInput.value = lines.join('\n');
-    }
-
-    if (lineupRowsContainer) {
-      addLineupRow();
-      lineupRowsContainer.addEventListener('input', serializeLineup);
-      lineupRowsContainer.addEventListener('change', serializeLineup);
-    }
-
-    if (addDjButton) {
-      addDjButton.addEventListener('click', function () {
-        var row = addLineupRow();
-        if (row) {
-          var nameField = row.querySelector('[data-lineup-name]');
-          if (nameField) nameField.focus();
-        }
-      });
-    }
+    var lineup = lineupRowsContainer && window.CbrLineupRows.init({
+      container: lineupRowsContainer,
+      template: form.querySelector('[data-lineup-row-template]'),
+      lineupInput: form.querySelector('[data-lineup-value]'),
+      genresInput: form.querySelector('[data-genres-value]'),
+      addButton: form.querySelector('[data-add-dj]'),
+    });
 
     // Section 9.1 rework: a venue address gets checked against a real
     // place (the same geocoder the flyer's real terrain already used, see
@@ -148,7 +106,7 @@
             return;
           }
 
-          if (lineupRowsContainer && step.contains(lineupRowsContainer)) serializeLineup();
+          if (lineup && step.contains(lineupRowsContainer)) lineup.serializeNow();
           showStep(index + 1);
         });
       }
@@ -189,7 +147,7 @@
         return;
       }
 
-      serializeLineup();
+      if (lineup) lineup.serializeNow();
 
       submitButton.disabled = true;
       status.textContent = 'Sending...';

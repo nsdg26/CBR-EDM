@@ -719,8 +719,14 @@ details.field summary {
   flex: none;
 }
 
-/* DJ rows, section 9.1 rework: name + optional inline genre/set-time note
-   + headliner checkbox + a remove button, one row per act. */
+/* DJ rows, section 9.1 rework: name, set time, genre, a headliner checkbox
+   and a remove button, all in one row. .field's default 40rem max-width
+   (set above) is too narrow to fit all of that on one line even on a
+   normal desktop viewport, so the field wrapping the rows gets more room. */
+.field-lineup {
+  max-width: 56rem;
+}
+
 .lineup-row {
   display: flex;
   flex-wrap: wrap;
@@ -729,8 +735,15 @@ details.field summary {
   margin-bottom: 0.5rem;
 }
 
-.lineup-row input[type="text"] {
-  flex: 1 1 10rem;
+.lineup-row [data-lineup-name] {
+  flex: 2 1 10rem;
+  min-width: 0;
+}
+
+.lineup-row [data-lineup-time],
+.lineup-row [data-lineup-genre] {
+  flex: 1 1 7rem;
+  min-width: 0;
 }
 
 .lineup-row-headliner {

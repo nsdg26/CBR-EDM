@@ -155,6 +155,65 @@ button.danger, .button.danger {
   padding: 0;
 }
 
+/* A checkbox inside a <label> otherwise inherits the 44px min-height
+   given to every input above, blowing it up to 44px square next to
+   normal-height text -- see the matching rule in style.css, which this
+   mirrors so the admin event form's DJ-row headliner and age-restriction
+   checkboxes line up the same way the public forms' do. */
+.field label:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field label:has(> input[type="checkbox"]) input[type="checkbox"] {
+  min-height: auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+}
+
+/* DJ rows, section 9.1 rework: name, set time, genre, a headliner
+   checkbox and a remove button, all in one row -- mirrors style.css so
+   the admin event form matches the public submit/edit forms. */
+.lineup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.lineup-row [data-lineup-name] {
+  flex: 2 1 10rem;
+  min-width: 0;
+}
+
+.lineup-row [data-lineup-time],
+.lineup-row [data-lineup-genre] {
+  flex: 1 1 7rem;
+  min-width: 0;
+}
+
+.lineup-row-headliner {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.lineup-row-headliner input[type="checkbox"] {
+  min-height: auto;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.lineup-row [data-remove-dj] {
+  padding: 0.4rem 0.7rem;
+  min-height: auto;
+}
+
 /* Generated flyer preview and compare grid, FLYER-ENGINE-SPEC.md section
    13: the inlined SVG has no width/height attribute, only a viewBox, so
    without this it renders at the browser's 300x150 SVG default. */

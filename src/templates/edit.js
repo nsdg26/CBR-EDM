@@ -1,6 +1,7 @@
 import { html } from '../lib/escape.js';
+import { lineupField, ageRestrictionField } from './lineupRow.js';
 
-const FIELD_DEFS = [
+const FIELD_DEFS_BEFORE_LINEUP = [
   ['title', 'Title', 'text'],
   ['presented_by', 'Presented by', 'text'],
   ['start_at_local', 'Start (Canberra time)', 'datetime-local'],
@@ -9,11 +10,23 @@ const FIELD_DEFS = [
   ['venue_address', 'Venue address', 'text'],
   ['location_reveal_at', 'When will the location be announced?', 'text'],
   ['location_how_to_find', 'How will people find out?', 'text'],
-  ['genres', 'Genre', 'text'],
-  ['lineup', 'Lineup (one act per line)', 'textarea'],
+];
+
+const FIELD_DEFS_AFTER_LINEUP = [
   ['ticket_url', 'Ticket URL', 'url'],
   ['notes', 'Anything else worth knowing', 'textarea'],
 ];
+
+function renderField([name, label, type]) {
+  return html`<div class="field">
+    <label for="${name}">${label}</label>
+    ${type === 'textarea'
+      ? html`<textarea id="${name}" name="${name}"></textarea>`
+      : type === 'url'
+        ? html`<input type="text" inputmode="url" id="${name}" name="${name}">`
+        : html`<input type="${type}" id="${name}" name="${name}">`}
+  </div>`;
+}
 
 /**
  * GET /edit. Section 9.2: JavaScript reads the token from the URL
@@ -28,27 +41,17 @@ export function editPage() {
     <form data-edit-form hidden>
       <p data-edit-review-note class="error" hidden>This event is already published. Your changes will be reviewed by the admin before they go live.</p>
 
-      ${FIELD_DEFS.map(([name, label, type]) => html`<div class="field">
-        <label for="${name}">${label}</label>
-        ${type === 'textarea'
-          ? html`<textarea id="${name}" name="${name}"></textarea>`
-          : type === 'url'
-            ? html`<input type="text" inputmode="url" id="${name}" name="${name}">`
-            : html`<input type="${type}" id="${name}" name="${name}">`}
-      </div>`)}
+      ${FIELD_DEFS_BEFORE_LINEUP.map(renderField)}
+
+      ${lineupField()}
+
+      ${FIELD_DEFS_AFTER_LINEUP.map(renderField)}
 
       <div class="field">
         <label><input type="checkbox" name="location_tba" id="location_tba" value="1"> Location TBA</label>
       </div>
 
-      <div class="field">
-        <label for="age_restriction">Age restriction</label>
-        <select id="age_restriction" name="age_restriction">
-          <option value="unknown">Not sure / not set</option>
-          <option value="18+">18+</option>
-          <option value="all_ages">All ages</option>
-        </select>
-      </div>
+      ${ageRestrictionField()}
 
       <button type="submit">Save changes</button>
       <p data-edit-save-status role="status"></p>

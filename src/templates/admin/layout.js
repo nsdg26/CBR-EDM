@@ -42,6 +42,8 @@ export function adminLayout({ title, bodyContent, email, now = new Date() }) {
     ${raw(bodyContent)}
   </main>
   <script src="/js/admin-confirm.js" defer></script>
+  <script src="/js/lineup-rows.js" defer></script>
+  <script src="/js/admin-events-form.js" defer></script>
 </body>
 </html>`;
 }

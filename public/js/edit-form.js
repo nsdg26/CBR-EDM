@@ -18,12 +18,21 @@
   var requestStatus = actions.querySelector('[data-request-status]');
   var isPublished = false;
 
+  // The DJ-row lineup UI is hydrated separately below once the event
+  // loads (see CbrLineupRows.init), and age_restriction is now a
+  // checkbox plus a same-named hidden fallback (section 9.1 rework, see
+  // ageRestrictionField in src/templates/lineupRow.js) -- form.elements
+  // would return a RadioNodeList for that shared name, not a single
+  // element, so it's set directly by id instead of through setField.
   function setField(name, value) {
     var el = form.elements.namedItem(name);
     if (!el) return;
     if (el.type === 'checkbox') el.checked = Boolean(value);
     else el.value = value || '';
   }
+
+  var lineupRowsContainer = form.querySelector('[data-lineup-rows]');
+  var ageRestrictionCheckbox = document.getElementById('age_restriction');
 
   fetch('/api/edit/load', {
     method: 'POST',
@@ -42,9 +51,22 @@
       reviewNote.hidden = !isPublished;
 
       ['title', 'presented_by', 'start_at_local', 'end_at_local', 'venue_name', 'venue_address',
-        'location_reveal_at', 'location_how_to_find', 'genres', 'lineup', 'ticket_url',
-        'notes', 'age_restriction'].forEach(function (name) { setField(name, event[name]); });
+        'location_reveal_at', 'location_how_to_find', 'ticket_url', 'notes']
+        .forEach(function (name) { setField(name, event[name]); });
       setField('location_tba', event.location_tba);
+      if (ageRestrictionCheckbox) ageRestrictionCheckbox.checked = event.age_restriction !== 'all_ages';
+
+      if (lineupRowsContainer && window.CbrLineupRows) {
+        window.CbrLineupRows.init({
+          container: lineupRowsContainer,
+          template: form.querySelector('[data-lineup-row-template]'),
+          lineupInput: form.querySelector('[data-lineup-value]'),
+          genresInput: form.querySelector('[data-genres-value]'),
+          addButton: form.querySelector('[data-add-dj]'),
+          initialActs: window.CbrLineupRows.parseLineupText(event.lineup),
+          initialGenres: event.genres,
+        });
+      }
 
       statusEl.hidden = true;
       form.hidden = false;
