@@ -208,8 +208,15 @@
 
         window.location.href = '/submit/confirmation#' + encodeURIComponent(result.editToken || '');
       } catch (err) {
+        // A Turnstile token is single-use -- without resetting here too
+        // (the other failure branch above already does), a network
+        // hiccup on this attempt leaves the same now-stale token in the
+        // hidden field, so the next click resends it and gets rejected
+        // as a duplicate ("that check did not pass") even though nothing
+        // about the check itself was wrong.
         status.textContent = 'Something went wrong. Try again.';
         submitButton.disabled = false;
+        if (window.turnstile) window.turnstile.reset();
       }
     });
   }

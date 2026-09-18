@@ -29,8 +29,14 @@
         window.location.href = '/contact/sent';
       })
       .catch(function () {
+        // Same fix as submit-form.js: without resetting here too, a
+        // network hiccup leaves the single-use Turnstile token stale in
+        // the hidden field, so the next click resends it and gets
+        // rejected as a duplicate ("that check did not pass") even
+        // though nothing about the check itself was wrong.
         status.textContent = 'Something went wrong. Try again.';
         submitButton.disabled = false;
+        if (window.turnstile) window.turnstile.reset();
       });
   });
 })();
