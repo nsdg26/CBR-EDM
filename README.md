@@ -6,9 +6,11 @@ build specification (its working name, "Project C-EDM", predates the real
 name and domain below) and [CHANGELOG.md](./CHANGELOG.md) for what has
 actually been built.
 
-The site name is `CBR EDM`, with the domain `cbredm.org`. Everything reads
-the name from [`src/config.js`](./src/config.js), so renaming later is still
-a one-file change.
+The site name shown on the page is `CBR DANCE MUSIC`, read from
+[`src/config.js`](./src/config.js), so renaming later is still a one-file
+change. The project itself may be referred to as either `cbrdance` or
+`cbredm` - both `cbrdance.org` and `cbredm.org` are owned and redirect to
+the same Worker.
 
 ## Local development
 
@@ -61,7 +63,9 @@ with access to accounts, a card, and a domain registrar.
    ```
 2. **Personal Cloudflare account.** Sign up at
    [dash.cloudflare.com](https://dash.cloudflare.com) if you do not have one.
-3. **Domain: `cbredm.org`.** Check whether
+3. **Domain: `cbredm.org`.** (A second domain, `cbrdance.org`, was bought
+   later and set up to redirect to the same Worker - see the custom domains
+   step below.) Check whether
    [Cloudflare Registrar](https://developers.cloudflare.com/registrar/)
    sells `.org` domains at purchase time. If not, buy it from any registrar
    and point the nameservers at Cloudflare. Before buying, check what the
