@@ -71,8 +71,14 @@
           return true;
         }
 
+        // Mirrors venueNotFoundMessage in src/lib/geocode.js: with no street
+        // address given, "check it" is the wrong nudge -- a bare venue name
+        // Nominatim doesn't recognise is fixed by adding a real address,
+        // not by re-checking the name.
         if (venueCheckStatus) {
-          venueCheckStatus.textContent = "We couldn't find that address. Check it, or tick Location TBA if it's not locked in yet.";
+          venueCheckStatus.textContent = address
+            ? "We couldn't find that venue address. Check it, or tick Location TBA if it's not locked in yet."
+            : "We don't know that venue. Try adding a street address, or tick Location TBA if it's not locked in yet.";
         }
         return false;
       } catch (err) {

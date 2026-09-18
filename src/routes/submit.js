@@ -6,7 +6,7 @@ import { generateToken, hashToken } from '../lib/tokens.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { sendAdminAlert } from '../lib/email.js';
-import { terrainFieldsFor, checkVenueRealness } from '../lib/geocode.js';
+import { terrainFieldsFor, checkVenueRealness, venueNotFoundMessage } from '../lib/geocode.js';
 
 const TURNSTILE_SCRIPT = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>';
 
@@ -56,7 +56,7 @@ export async function handleSubmissionApi(request, env) {
 
   const venueCheck = await checkVenueRealness(fields);
   if (!venueCheck.skip && !venueCheck.ok) {
-    return jsonResponse({ ok: false, error: "We couldn't find that venue address. Check it, or tick Location TBA if it's not locked in yet." }, 400);
+    return jsonResponse({ ok: false, error: venueNotFoundMessage(fields) }, 400);
   }
 
   const submitterContact = (formData.get('submitter_contact') || '').slice(0, 300) || null;

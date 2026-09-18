@@ -158,6 +158,22 @@ export async function checkVenueRealness(fields) {
 }
 
 /**
+ * The message for a failed checkVenueRealness, tailored to whether a street
+ * address was actually given: with no venue_address, "check it" is the
+ * wrong nudge -- a bare venue name that Nominatim doesn't recognise (a
+ * small or brand new place, unmapped rather than mistyped) is fixed by
+ * adding a real address, not by re-checking the name. public/js/submit-form.js
+ * mirrors this same branch client-side for the live step-2 check, since it
+ * can't import this module.
+ * @param {{ venue_address: string|null }} fields
+ */
+export function venueNotFoundMessage(fields) {
+  return fields.venue_address
+    ? "We couldn't find that venue address. Check it, or tick Location TBA if it's not locked in yet."
+    : "We don't know that venue. Try adding a street address, or tick Location TBA if it's not locked in yet.";
+}
+
+/**
  * The venue_lat/venue_lng/elevation_grid columns to persist for a save,
  * called automatically on every event create/update rather than behind a
  * manual "Fetch real terrain" button (owner request: it should always be

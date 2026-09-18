@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { geocodeVenue, fetchElevationGrid, fetchRealTerrain } from '../src/lib/geocode.js';
+import { geocodeVenue, fetchElevationGrid, fetchRealTerrain, venueNotFoundMessage } from '../src/lib/geocode.js';
 
 function withFetch(impl, fn) {
   const original = global.fetch;
@@ -135,6 +135,15 @@ test('fetchRealTerrain returns null if geocoding fails, without attempting eleva
     assert.equal(result, null);
     assert.equal(elevationCalled, false);
   });
+});
+
+test('venueNotFoundMessage nudges toward a street address when none was given', () => {
+  assert.match(venueNotFoundMessage({ venue_address: null }), /don't know that venue.*street address/);
+  assert.match(venueNotFoundMessage({ venue_address: '' }), /don't know that venue.*street address/);
+});
+
+test('venueNotFoundMessage nudges to check the address when one was given', () => {
+  assert.match(venueNotFoundMessage({ venue_address: '1 Lonsdale St, Braddon' }), /couldn't find that venue address.*Check it/);
 });
 
 test('fetchRealTerrain combines geocoding and elevation', async () => {
