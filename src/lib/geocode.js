@@ -40,7 +40,14 @@ const MIN_SPECIFIC_PLACE_RANK = 20;
 export async function geocodeVenue(venueName, venueAddress) {
   const primary = venueAddress || venueName;
   if (!primary) return null;
-  const query = [primary, 'Canberra', 'ACT', 'Australia'].join(', ');
+  // Just the country, not "Canberra, ACT" -- CANBERRA_VIEWBOX already
+  // covers the NSW region around Canberra (bush doof venues are often
+  // just over the border), and forcing "ACT" into the query text
+  // contradicts a genuine NSW address (e.g. "..., Bungendore, NSW,
+  // Australia, Canberra, ACT, Australia"), which Nominatim then fails
+  // to match at all -- a real, correctly-typed venue address would
+  // wrongly come back as not found.
+  const query = [primary, 'Australia'].join(', ');
 
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&bounded=1&viewbox=${CANBERRA_VIEWBOX}&q=${encodeURIComponent(query)}`;
