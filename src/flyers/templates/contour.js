@@ -266,13 +266,15 @@ function pushCenteredLine(parts, ctx, text, y, size, options = {}) {
 
 /**
  * The block of text above the map: an optional small title/presenter
- * line, then either one big headliner plus every support act wrapped
- * underneath (no "+N MORE" -- contour is the only template left, so
- * everyone has to show), or, with equalBilling, every act at the same
- * size and no headliner emphasis at all (owner request: a lot of small
- * community lineups put equal weight on every act). Returns the y just
- * past the bottom of whatever it drew, so the caller can keep the venue
- * marker/label clear of it dynamically instead of a fixed guess.
+ * line, then either one big line per headliner act plus every other act
+ * wrapped underneath as support (no "+N MORE" -- contour is the only
+ * template left, so everyone has to show), or, when no act is marked
+ * headliner, every act at the same size and no emphasis at all -- section
+ * 9.1's DJ-row headliner checkbox drives this directly now: leaving every
+ * row unchecked reads as equal billing, so there's no separate control for
+ * it any more. Returns the y just past the bottom of whatever it drew, so
+ * the caller can keep the venue marker/label clear of it dynamically
+ * instead of a fixed guess.
  */
 function buildActsBlock(ctx, event) {
   const { canvas } = ctx;
@@ -311,7 +313,9 @@ function buildActsBlock(ctx, event) {
   }
   if (smallLines.length) top += 12;
 
-  if (event.equalBilling && event.acts.length) {
+  const headlinerActs = event.acts.filter((act) => act.headliner);
+
+  if (headlinerActs.length === 0 && event.acts.length) {
     const names = event.acts.map((act) => act.name.toUpperCase());
     const fit = fitNamesBlock(names, { width: canvas.contentWidth, height: 460 }, {
       minSize: 24, maxSize: 52, font: 'archivo', leading: 1.25, letterSpacingRatio: 0.02,
@@ -322,11 +326,13 @@ function buildActsBlock(ctx, event) {
     return { svg: parts.join(''), bottomY: top };
   }
 
-  if (event.headliner) {
-    line(event.headliner.toUpperCase(), 56, { weight: 800 });
+  if (headlinerActs.length) {
+    for (const act of headlinerActs) {
+      line(act.name.toUpperCase(), 56, { weight: 800 });
+    }
     top += 8;
 
-    const support = event.acts.slice(1);
+    const support = event.acts.filter((act) => !act.headliner);
     if (support.length) {
       const names = support.map((act) => act.name.toUpperCase());
       // maxSize stays below smallSize (20, the title/"Presented by" line

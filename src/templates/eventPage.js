@@ -1,6 +1,7 @@
 import { html, raw } from '../lib/escape.js';
 import { formatEventDateTime, isEventPast } from '../lib/dates.js';
 import { stampFor, venueTextFor } from '../lib/eventDisplay.js';
+import { actsWithHeadliners } from '../lib/lineup.js';
 import { config } from '../config.js';
 import { render as renderFlyer } from '../flyers/index.js';
 
@@ -18,7 +19,7 @@ export function eventPage(event, now = new Date()) {
   const presentedBy = event.crew_slug
     ? html`<a href="/crews/${event.crew_slug}">${event.crew_name}</a>`
     : (event.crew_name || event.presented_by);
-  const lineupActs = (event.lineup || '').split('\n').map((line) => line.trim()).filter(Boolean);
+  const lineupActs = actsWithHeadliners(event.lineup, event.lineup_equal_billing);
 
   // Every flyer is generated, owner request: uploads are gone, so this is
   // the only flyer a page ever has.
@@ -34,7 +35,7 @@ export function eventPage(event, now = new Date()) {
       ${venueText ? html`<p class="scrap-meta">${venueText}</p>` : ''}
       ${event.genres ? html`<p class="scrap-meta">${event.genres}</p>` : ''}
       ${lineupActs.length
-        ? html`<ul class="link-list">${lineupActs.map((act) => html`<li>${act}</li>`)}</ul>`
+        ? html`<ul class="link-list">${lineupActs.map((act) => html`<li>${act.headliner ? html`<strong>${act.name}</strong>` : act.name}${act.note ? ` (${act.note})` : ''}</li>`)}</ul>`
         : ''}
       ${event.ticket_url ? html`<p><a href="/go/${event.id}">Tickets</a></p>` : ''}
       ${event.age_restriction === '18+' ? html`<p class="scrap-meta">18+</p>` : ''}

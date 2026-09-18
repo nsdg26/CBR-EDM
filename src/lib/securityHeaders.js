@@ -12,7 +12,13 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self' https://cloudflareinsights.com",
+  // challenges.cloudflare.com is also needed here, not just in frame-src
+  // and script-src: the Turnstile widget's own JS makes fetch/XHR calls
+  // back to its origin for parts of the challenge flow, which connect-src
+  // (not frame-src) governs. Without it those calls are silently blocked,
+  // which can present as "the widget looks fine, but the check keeps
+  // failing" without a proper error message on screen.
+  "connect-src 'self' https://cloudflareinsights.com https://challenges.cloudflare.com",
   "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
 ].join('; ');

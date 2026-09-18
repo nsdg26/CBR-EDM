@@ -116,15 +116,38 @@ export async function fetchElevationGrid(lat, lng) {
  * missing optional field.
  * @param {string|null} venueName
  * @param {string|null} venueAddress
+ * @param {{ lat: number, lng: number }|null} [precomputedLocation] - skips
+ *   geocoding when the caller already has a result, e.g. from
+ *   checkVenueRealness having just validated the same address
  */
-export async function fetchRealTerrain(venueName, venueAddress) {
-  const location = await geocodeVenue(venueName, venueAddress);
+export async function fetchRealTerrain(venueName, venueAddress, precomputedLocation) {
+  const location = precomputedLocation !== undefined ? precomputedLocation : await geocodeVenue(venueName, venueAddress);
   if (!location) return null;
 
   const grid = await fetchElevationGrid(location.lat, location.lng);
   if (!grid) return null;
 
   return { lat: location.lat, lng: location.lng, grid };
+}
+
+/**
+ * Whether a submitted venue is a real, geocodable place, section 9.1: the
+ * public submit and edit-your-listing forms reject a venue address that
+ * doesn't resolve to anything (unless the location is TBA), reusing this
+ * same geocoder rather than a separate address-validation service. Returns
+ * `skip: true` when there's nothing to check (TBA, or no venue text at all
+ * -- both already legitimate per section 9.1's "nothing is required"), so
+ * the caller only has to act on `ok` when `skip` is false. When it does
+ * check, `location` is handed back so the caller can pass it straight into
+ * terrainFieldsFor and avoid geocoding the same address twice.
+ * @param {{ location_tba: boolean|number, venue_name: string|null, venue_address: string|null }} fields
+ */
+export async function checkVenueRealness(fields) {
+  if (fields.location_tba) return { skip: true };
+  if (!fields.venue_name && !fields.venue_address) return { skip: true };
+
+  const location = await geocodeVenue(fields.venue_name, fields.venue_address);
+  return { skip: false, ok: Boolean(location), location };
 }
 
 /**
@@ -141,8 +164,9 @@ export async function fetchRealTerrain(venueName, venueAddress) {
  * had real terrain -- it just tries again on the next save.
  * @param {{ location_tba: boolean|number, venue_name: string|null, venue_address: string|null }} fields
  * @param {{ venue_lat: number|null, venue_lng: number|null, elevation_grid: string|null }} [existing]
+ * @param {{ lat: number, lng: number }|null} [precomputedLocation] - see fetchRealTerrain
  */
-export async function terrainFieldsFor(fields, existing = {}) {
+export async function terrainFieldsFor(fields, existing = {}, precomputedLocation) {
   const kept = {
     venue_lat: existing.venue_lat ?? null,
     venue_lng: existing.venue_lng ?? null,
@@ -152,7 +176,7 @@ export async function terrainFieldsFor(fields, existing = {}) {
   if (fields.location_tba) return { venue_lat: null, venue_lng: null, elevation_grid: null };
   if (!fields.venue_name && !fields.venue_address) return kept;
 
-  const terrain = await fetchRealTerrain(fields.venue_name, fields.venue_address);
+  const terrain = await fetchRealTerrain(fields.venue_name, fields.venue_address, precomputedLocation);
   if (!terrain) return kept;
 
   return { venue_lat: terrain.lat, venue_lng: terrain.lng, elevation_grid: JSON.stringify(terrain.grid) };
