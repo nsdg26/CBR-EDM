@@ -24,3 +24,10 @@ A Claude Code session can only work with repos under one GitHub account at
 a time (no cross-account access in a single session), so this session
 cannot see or push to `nic-st/cbrdance` directly -- that would need a
 separate session started with `nic-st/cbrdance` as its source.
+
+`scripts/sync-to-cbrdance.sh` does the actual moving-across step: run it
+locally inside the `CBRDANCE` desktop folder to pull `nsdg26`'s `main`
+into `nic-st/cbrdance`'s `main` and push it. It also fixes the common
+failure mode where that folder's `origin` remote got pointed at the
+`nsdg26` repo instead of `nic-st/cbrdance` (which is what makes GitHub
+Desktop conflate the two folders and refuse to push).
