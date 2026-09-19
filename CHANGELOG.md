@@ -5,6 +5,103 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+- Public event submissions (`POST /api/submissions`) failing outright,
+  every time: the INSERT listed 30 columns but its VALUES tuple supplied
+  only 29 -- `elevation_grid` had no value at all -- so D1 rejected every
+  submission with "29 values for 30 columns". Confirmed live via
+  Cloudflare's observability page (`D1_ERROR`, and the matching `POST
+  /api/submissions` failures) and fixed by adding the missing placeholder
+  in `src/routes/submit.js`.
+- The admin "Add an event" form (`src/routes/admin/events.js`) had the
+  opposite bug in the same INSERT: one extra placeholder ahead of the
+  `visibility`/`source`/`sequence` literals shifted every column from
+  `visibility` onward by one, so an admin-created event silently got the
+  wrong visibility, source, sequence and created_at. Didn't error (28
+  values is a valid, just wrong, shape), so this had been happening
+  unnoticed. `crew.js`'s INSERT was already correctly aligned.
+- Turnstile intermittently rejecting a resubmission with "that check did
+  not pass" after a first attempt failed with "Something went wrong",
+  owner report (submit and contact forms both). The failure branch for a
+  server rejection already called `turnstile.reset()`; the `catch` block
+  for a network error or unparseable response didn't, so a single-use
+  token from the failed attempt was still sitting in the hidden field on
+  the next click and got rejected as a duplicate. Both `public/js/
+  submit-form.js` and `public/js/contact-form.js` now reset on that path
+  too.
+- Real venue addresses (particularly the NSW towns surrounding Canberra
+  that bush-doof venues are often actually in -- Bungendore, Sutton,
+  Queanbeyan etc.) failing the "couldn't find that venue" check, owner
+  report. `geocodeVenue` was appending a hardcoded ", Canberra, ACT,
+  Australia" to every query regardless of what the address actually
+  was, which contradicts a genuine NSW address (two states named in one
+  query) and Nominatim then matches nothing. The bounded viewbox already
+  constrains the search geographically; the query text now just adds
+  "Australia".
+- The site URL on the printable poster showing a trailing slash
+  (`homeUrl` is always built as `origin + '/'`); stripped for display
+  only, the QR code itself is unaffected.
+
+### Changed
+- Step 3 of the submit form, owner request: each DJ row is now Name ->
+  Set time -> Genre -> Headliner -> Remove, all in one row, replacing
+  the standalone full-width Genre field and the old combined "genre/set
+  time" note box. The event's overall `genres` value (still used by
+  flyers, event cards and the event page) is now built automatically
+  from whatever's entered across the rows -- but only overwrites the
+  field once a row's genre box actually holds something, so an existing
+  event's genres text survives edits to rows that don't touch genre. A
+  legacy note with no genre/time split lands entirely in the genre box
+  rather than being discarded, so an untouched row round-trips exactly.
+  Applied consistently to the admin add/edit event form and the public
+  edit-your-listing form too (previously only submit had the DJ-row UI
+  at all), via a new shared template module (`src/templates/
+  lineupRow.js`) and shared client-side script (`public/js/
+  lineup-rows.js`).
+- Age restriction is a single "18+" checkbox (default ticked, untick for
+  all ages) instead of a three-option dropdown, owner request. Same
+  three forms as above. The checkbox and a same-named hidden "all_ages"
+  fallback rely on `FormData` returning the first same-named entry in
+  document order, so no backend change was needed.
+- The venue-not-found message now depends on whether a street address
+  was actually given: a bare venue name Nominatim doesn't recognise (an
+  unmapped small/new venue) gets nudged to add a real address instead of
+  "check it", which was the wrong nudge when there was no address to
+  check in the first place.
+- Poster content now scales to the real physical size ratio between
+  page sizes instead of a rough per-size guess, owner report: A6 was the
+  correct, hand-tuned baseline, but A4 (exactly 2x A6 linearly) only had
+  ~1.5-1.8x bigger text/QR/gap values, so its 4x page area was mostly
+  blank around small content. Every content dimension in `src/templates/
+  poster.js` is now derived from the same size ratio A6 uses, so any
+  size fills the page the same proportion A6 does.
+
+### Verified with a live dev server + browser
+The D1 INSERT fixes, DJ-row rework and age-restriction change all
+end to end: created an event through the admin form, confirmed every
+column landed correctly in D1 (`visibility`/`source`/`sequence`/
+`created_at`, not shifted), loaded it through the public
+edit-your-listing form (DJ rows, genres and the age checkbox hydrating
+correctly from real stored data, including a legacy note with no
+genre/time split falling back into the genre box rather than being
+dropped), edited and re-saved it, and confirmed the changes persisted.
+Both venue-not-found message variants (name-only vs. a bad address) at
+the real `/api/submissions` and `/api/edit/update` endpoints. Poster A4
+vs. A6 fill visually compared. Owner then confirmed a real submission
+and a real contact message both worked on the live production site
+after deployment.
+
+### Notes
+- `public/js/crew-dashboard.js`'s login request has no `.catch` at all
+  (unlike submit/contact/edit, which do), so a network error there
+  leaves the button stuck on "Checking..." with no message and no
+  Turnstile reset, rather than failing visibly. Not fixed this round
+  since it wasn't the reported issue -- noted here since it's the same
+  class of bug as the Turnstile fixes above, just not yet touched.
+- This repo (`nsdg26/CBR-EDM-BUILD`) is not what Cloudflare deploys
+  from -- see `CLAUDE.md` for the two-repo setup and
+  `scripts/sync-to-cbrdance.sh` for moving changes across.
+
 ### Removed
 - The site wordmark ("CBR EDM") from every generated flyer template,
   owner request. `src/flyers/parts/wordmark.js` deleted; the harm
